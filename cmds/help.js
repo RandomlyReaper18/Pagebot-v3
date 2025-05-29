@@ -11,9 +11,9 @@ module.exports = {
   
   async execute(senderId, args, pageAccessToken) {
     const resa = await axios.get(`https://beta.ourmanna.com/api/v1/get?format=json&order=daily`);
-    const bibleText = resa.verse.details.text;
-    const bibleVerse = resa.verse.details.reference;
-    const bibleVer = resa.verse.details.version;
+    const bibleText = resa.data.verse.details.text;
+    const bibleVerse = resa.data.verse.details.reference;
+    const bibleVer = resa.data.verse.details.version;
     const commandsDir = path.join(__dirname, '../cmds');
     const commandFiles = fs.readdirSync(commandsDir).filter(file => file.endsWith('.js'));
 
