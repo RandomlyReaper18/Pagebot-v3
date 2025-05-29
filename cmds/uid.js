@@ -12,7 +12,7 @@ module.exports = {
 
     if (!profileUrl) {
       await sendMessage(senderId, {
-        text: `Usage: findid [Facebook profile URL]/nYour Uid: ${senderId}`
+        text: `Usage: findid [Facebook profile URL]`
       }, pageAccessToken);
       return;
     }
