@@ -3,7 +3,7 @@ const { sendMessage } = require("../handles/message"); // Correctly import sendM
 
 module.exports = {
   name: "black",
-  description: "BlackBox try",
+  description: "BlackBox AI",
   role: 1,
   author: "Prince Sanel",
   async execute(senderId, args, pageAccessToken) {
