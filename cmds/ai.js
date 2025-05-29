@@ -5,7 +5,7 @@ module.exports = {
   name: "ai",
   description: "Gpt4o x Gemini AI",
   role: 1,
-  author: "Kiana",
+  author: "Kiana/modified by Prince",
 
   async execute(bot, args, authToken, event) {
     if (!event?.sender?.id) {
@@ -29,14 +29,14 @@ module.exports = {
       if (imageUrl) {
 
         const apiUrl = `https://kaiz-apis.gleeze.com/api/gemini-vision`;
-        const response = await handleImageRecognition(apiUrl, finalPrompt, imageUrl, senderId);
+        const response = await handleImageRecognition(apiUrl, finalPrompt, imageUrl, senderId, `&apikey=f05ad551-e7d7-459b-8b27-54e76da15011`);
         const result = response.response;
 
         const visionResponse = `🌌 𝐆𝐞𝐦𝐢𝐧𝐢 𝐀𝐧𝐚𝐥𝐲𝐬𝐢𝐬\n━━━━━━━━━━━━━━━━━━\n${result}`;
         sendLongMessage(bot, visionResponse, authToken);
       } else {
 
-        const apiUrl = `https://rest-api-french4.onrender.com/api/ai?model=gpt-4-turbo-2024-04-09&system=You%20are%20a%20helpful%20assistant&question=${finalPrompt}`;
+        const apiUrl = `https://kaiz-apis.gleeze.com/api/gpt-4o-pro?ask=${finalPrompt}&uid=1837473&imageUrl=none&apikey=f05ad551-e7d7-459b-8b27-54e76da15011`;
         const response = await axios.get(apiUrl);
         const gptMessage = response.data.response;
 
@@ -52,13 +52,7 @@ module.exports = {
 
 async function handleImageRecognition(apiUrl, prompt, imageUrl, senderId) {
   try {
-    const { data } = await axios.get(apiUrl, {
-      params: {
-        q: prompt,
-        uid: senderId,
-        imageUrl: imageUrl || ""
-      }
-    });
+    const { data } = await axios.get(`${apiUrl}q=${prompt}&uid=${senderId}&imageUrl=${imageUrl || ""}`);
     return data;
   } catch (error) {
     throw new Error("Failed to connect to the Gemini Vision API.");
