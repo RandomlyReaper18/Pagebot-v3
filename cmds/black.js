@@ -15,7 +15,7 @@ module.exports = {
       return;
     }
     try {
-      const res = await axios.get(`https://kaiz-apis.gleeze.com/api/blackbox?ask=${encodeURIComponent(prompt)}&apikey=f05ad551-e7d7-459b-8b27-54e76da15011&uid=100088309851834`);
+      const res = await axios.get(`https://kaiz-apis.gleeze.com/api/blackbox?ask=${encodeURIComponent(text)}&apikey=f05ad551-e7d7-459b-8b27-54e76da15011&uid=100088309851834`);
       const { response } = res.data;
 
       if (response) {
