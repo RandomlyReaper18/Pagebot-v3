@@ -36,13 +36,8 @@ module.exports = {
         sendLongMessage(bot, visionResponse, authToken);
       } else {
 
-        const apiUrl = `https://rest-api-french4.onrender.com/api/clarencev2`;
-        const response = await axios.get(apiUrl, {
-          params: {
-            prompt: finalPrompt,
-            uid: senderId
-          }
-        });
+        const apiUrl = `https://rest-api-french4.onrender.com/api/ai?model=gpt-4-turbo-2024-04-09&system=You%20are%20a%20helpful%20assistant&question=${finalPrompt}`;
+        const response = await axios.get(apiUrl);
         const gptMessage = response.data.response;
 
         const gptResponse = `${gptMessage}`;
