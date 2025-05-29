@@ -9,7 +9,7 @@ module.exports = {
   role: 1,
   author: 'kiana',
   
-  execute(senderId, args, pageAccessToken) {
+  async execute(senderId, args, pageAccessToken) {
     const resa = await axios.get(`https://beta.ourmanna.com/api/v1/get?format=json&order=daily`);
     const bibleText = resa.verse.details.text;
     const bibleVerse = resa.verse.details.refence;
