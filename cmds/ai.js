@@ -5,8 +5,7 @@ module.exports = {
   name: "ai",
   description: "Gpt4o x Gemini AI",
   role: 1,
-  author: "Kiana/modified by Prince",
-
+  author: "Kiana/Modified by Prince",
   async execute(bot, args, authToken, event) {
     if (!event?.sender?.id) {
       console.error('Invalid event object: Missing sender ID.');
@@ -29,7 +28,7 @@ module.exports = {
       if (imageUrl) {
 
         const apiUrl = `https://kaiz-apis.gleeze.com/api/gemini-vision`;
-        const response = await handleImageRecognition(apiUrl, finalPrompt, imageUrl, senderId, `&apikey=f05ad551-e7d7-459b-8b27-54e76da15011`);
+        const response = await handleImageRecognition(apiUrl, finalPrompt, imageUrl, senderId);
         const result = response.response;
 
         const visionResponse = `🌌 𝐆𝐞𝐦𝐢𝐧𝐢 𝐀𝐧𝐚𝐥𝐲𝐬𝐢𝐬\n━━━━━━━━━━━━━━━━━━\n${result}`;
@@ -52,7 +51,7 @@ module.exports = {
 
 async function handleImageRecognition(apiUrl, prompt, imageUrl, senderId) {
   try {
-    const { data } = await axios.get(`${apiUrl}q=${prompt}&uid=${senderId}&imageUrl=${imageUrl || ""}`);
+    const { data } = await axios.get(`${apiUrl}?q=${prompt}&uid=${senderId}&imageUrl=${imageUrl || ""}`);
     return data;
   } catch (error) {
     throw new Error("Failed to connect to the Gemini Vision API.");
