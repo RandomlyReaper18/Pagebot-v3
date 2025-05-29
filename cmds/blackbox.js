@@ -9,7 +9,7 @@ module.exports = {
   async execute(senderId, args, pageAccessToken, sendMessage) {
     const prompt = args.join(' ');
     try {
-      const apiUrl = `https://kaiz-apis.gleeze.com/api/blackbox?q=${encodeURIComponent(prompt)}&uid=${senderId}`;
+      const apiUrl = `https://kaiz-apis.gleeze.com/api/blackbox?ask=${encodeURIComponent(prompt)}&apikey=f05ad551-e7d7-459b-8b27-54e76da15011&uid=${senderId}`;
       const response = await axios.get(apiUrl);
       const text = response.data.response;
 
