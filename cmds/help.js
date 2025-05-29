@@ -9,10 +9,10 @@ module.exports = {
   role: 1,
   author: 'kiana',
   
-  execute(senderId, args, pageAccessToken) {
-    const resa = axios.get(`https://beta.ourmanna.com/api/v1/get?format=json&order=daily`);
+  async execute(senderId, args, pageAccessToken) {
+    const resa = await axios.get(`https://beta.ourmanna.com/api/v1/get?format=json&order=daily`);
     const bibleText = resa.verse.details.text;
-    const bibleVerse = resa.verse.details.refence;
+    const bibleVerse = resa.verse.details.reference;
     const bibleVer = resa.verse.details.version;
     const commandsDir = path.join(__dirname, '../cmds');
     const commandFiles = fs.readdirSync(commandsDir).filter(file => file.endsWith('.js'));
@@ -51,7 +51,7 @@ module.exports = {
       }, pageAccessToken);
     }
 
-    const helpTextMessage = `Commands List (Page ${page}/${totalPages})\n📜 Total Commands: ${totalCommands}\n\n${commandsForPage.map((cmd, index) => `${startIndex + index + 1}. ${cmd.title}\n📝 ${cmd.description}`).join('\n\n')}\n\n📌 Tip: Use "help [page]" to switch pages, or "help all" to see all commands!\n\n- ${bibleText}\n${bibleVerse} ${bibleVersion}`;
+    const helpTextMessage = `Commands List (Page ${page}/${totalPages})\n📜 Total Commands: ${totalCommands}\n\n${commandsForPage.map((cmd, index) => `${startIndex + index + 1}. ${cmd.title}\n📝 ${cmd.description}`).join('\n\n')}\n\n📌 Tip: Use "help [page]" to switch pages, or "help all" to see all commands!\n\n- ${bibleText}\n${bibleVerse} ${bibleVer}`;
 
 
     const quickReplies = commandsForPage.map((cmd) => ({
