@@ -19,17 +19,15 @@ module.exports = {
 
     try {
    
-      const res = await axios.get(`https://api.joshweb.click/api/findid`, {
-        params: { url: profileUrl }
-      });
+      const res = await axios.get(`https://kaiz-apis.gleeze.com/api/fbuid?url=${profileURL}&apikey=f05ad551-e7d7-459b-8b27-54e76da15011`);
 
    
-      const { status, result } = res.data;
+      const { UID } = res.data;
 
-      if (status && result) {
+      if (UID) {
 
         await sendMessage(senderId, {
-          text: `🔍 Facebook ID: ${result}`
+          text: `🔍 Facebook ID: ${UID}`
         }, pageAccessToken);
       } else {
         throw new Error("Unable to retrieve Facebook ID");
