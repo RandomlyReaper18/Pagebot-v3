@@ -8,7 +8,6 @@ module.exports = {
   description: 'Show available commands with descriptions',
   role: 1,
   author: 'kiana',
-  
   async execute(senderId, args, pageAccessToken) {
     const resa = await axios.get(`https://beta.ourmanna.com/api/v1/get?format=json&order=daily`);
     const bibleText = resa.data.verse.details.text;
@@ -38,7 +37,7 @@ module.exports = {
     // Display all commands if "help all" is provided
     if (args[0]?.toLowerCase() === 'all') {
       const helpTextMessage = `All Available Commands\n📜 Total Commands: ${totalCommands}\n\n${commands.map((cmd, index) => `${index + 1}. ${cmd.title}\n📖 ${cmd.description}`).join('\n\n')}`;
-      return sendMessage(senderId, { text: helpTextMessage }, pageAccessToken);
+      return await sendMessage(senderId, { text: helpTextMessage }, pageAccessToken);
     }
 
 
@@ -46,7 +45,7 @@ module.exports = {
     const commandsForPage = commands.slice(startIndex, startIndex + commandsPerPage);
 
     if (commandsForPage.length === 0) {
-      return sendMessage(senderId, {
+      return await sendMessage(senderId, {
         text: `❌ Oops! Page ${page} doesn't exist. There are only ${totalPages} page(s) available.`,
       }, pageAccessToken);
     }
@@ -61,7 +60,7 @@ module.exports = {
     }));
 
 
-    sendMessage(senderId, {
+    await sendMessage(senderId, {
       text: helpTextMessage,
       quick_replies: quickReplies
     }, pageAccessToken);
