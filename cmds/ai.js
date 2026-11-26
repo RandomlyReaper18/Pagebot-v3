@@ -2,6 +2,8 @@ const axios = require("axios");
 const { sendMessage } = require('../handles/message');
 const { graphApiUrl } = require('../handles/graphApi');
 
+const KAIZ_API_KEY = () => process.env.KAIZ_API_KEY;
+
 module.exports = {
   name: "ai",
   description: "Gpt4o x Gemini AI",
@@ -23,21 +25,27 @@ module.exports = {
       return sendMessage(bot, { text: "Please enter your question or reply with an image to analyze." }, authToken);
     }
 
+    if (!KAIZ_API_KEY()) {
+      return sendMessage(bot, { text: "AI is not configured on this server." }, authToken);
+    }
+
     try {
       const imageUrl = await extractImageUrl(event, authToken);
 
       if (imageUrl) {
 
         const apiUrl = `https://kaiz-apis.gleeze.com/api/gemini-vision`;
-        const response = await handleImageRecognition(apiUrl, finalPrompt, imageUrl);
+        const response = await handleImageRecognition(apiUrl, finalPrompt, imageUrl, senderId);
         const result = response.response;
 
         const visionResponse = `🌌 𝐆𝐞𝐦𝐢𝐧𝐢 𝐀𝐧𝐚𝐥𝐲𝐬𝐢𝐬\n━━━━━━━━━━━━━━━━━━\n${result}`;
         sendLongMessage(bot, visionResponse, authToken);
       } else {
 
-        const apiUrl = `https://kaiz-apis.gleeze.com/api/gpt-4o-pro?ask=${finalPrompt}&uid=1837473&imageUrl=none&apikey=f05ad551-e7d7-459b-8b27-54e76da15011`;
-        const response = await axios.get(apiUrl);
+        const response = await axios.get("https://kaiz-apis.gleeze.com/api/gpt-4o-pro", {
+          params: { ask: finalPrompt, uid: senderId, imageUrl: "none", apikey: KAIZ_API_KEY() },
+          timeout: 30000
+        });
         const gptMessage = response.data.response;
 
         const gptResponse = `${gptMessage}`;
@@ -50,9 +58,12 @@ module.exports = {
   }
 };
 
-async function handleImageRecognition(apiUrl, prompt, imageUrl) {
+async function handleImageRecognition(apiUrl, prompt, imageUrl, uid) {
   try {
-    const { data } = await axios.get(`${apiUrl}?q=${prompt}&uid=267282&imageUrl=${imageUrl}&apikey=f05ad551-e7d7-459b-8b27-54e76da15011`);
+    const { data } = await axios.get(apiUrl, {
+      params: { q: prompt, uid: uid, imageUrl, apikey: KAIZ_API_KEY() },
+      timeout: 30000
+    });
     return data;
   } catch (error) {
     throw new Error("Failed to connect to the Gemini Vision API.");

@@ -9,10 +9,14 @@ module.exports = {
   role: 1,
   author: 'kiana',
   async execute(senderId, args, pageAccessToken) {
-    const resa = await axios.get(`https://beta.ourmanna.com/api/v1/get?format=json&order=daily`);
-    const bibleText = resa.data.verse.details.text;
-    const bibleVerse = resa.data.verse.details.reference;
-    const bibleVer = resa.data.verse.details.version;
+    let verseLine = '';
+    try {
+      const resa = await axios.get('https://beta.ourmanna.com/api/v1/get?format=json&order=daily', { timeout: 5000 });
+      const details = resa.data.verse.details;
+      verseLine = `\n\n- ${details.text}\n${details.reference} ${details.version}`;
+    } catch (error) {
+      console.error('Daily verse unavailable:', error.message);
+    }
     const commandsDir = path.join(__dirname, '../cmds');
     const commandFiles = fs.readdirSync(commandsDir).filter(file => file.endsWith('.js'));
 
@@ -50,7 +54,7 @@ module.exports = {
       }, pageAccessToken);
     }
 
-    const helpTextMessage = `Commands List (Page ${page}/${totalPages})\n📜 Total Commands: ${totalCommands}\n\n${commandsForPage.map((cmd, index) => `${startIndex + index + 1}. ${cmd.title}\n📝 ${cmd.description}`).join('\n\n')}\n\n📌 Tip: Use "help [page]" to switch pages, or "help all" to see all commands!\n\n- ${bibleText}\n${bibleVerse} ${bibleVer}`;
+    const helpTextMessage = `Commands List (Page ${page}/${totalPages})\n📜 Total Commands: ${totalCommands}\n\n${commandsForPage.map((cmd, index) => `${startIndex + index + 1}. ${cmd.title}\n📝 ${cmd.description}`).join('\n\n')}\n\n📌 Tip: Use "help [page]" to switch pages, or "help all" to see all commands!${verseLine}`;
 
 
     const quickReplies = commandsForPage.map((cmd) => ({

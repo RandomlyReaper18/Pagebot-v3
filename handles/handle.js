@@ -4,6 +4,9 @@ const axios = require('axios');
 const { sendMessage } = require('./message');
 const { graphApiUrl } = require('./graphApi');
 const config = require('../configure.json');
+const { createLimiter } = require('./rateLimit');
+
+const userLimiter = createLimiter({ max: 12, windowMs: 60 * 1000 });
 
 const commands = new Map();
 const prefix = '';
@@ -22,6 +25,13 @@ async function handleMessage(event, pageAccessToken) {
     }
 
     const senderId = event.sender.id;
+
+    if (event.message?.is_echo) return;
+
+    if (!config.adminId.includes(senderId) && !userLimiter(senderId)) {
+        sendMessage(senderId, { text: 'You are sending messages too fast. Please wait a minute and try again.' }, pageAccessToken);
+        return;
+    }
 
     if (event.message?.text) {
         const messageText = event.message.text.trim();

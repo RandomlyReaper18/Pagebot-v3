@@ -15,7 +15,14 @@ module.exports = {
       return;
     }
     try {
-      const res = await axios.get(`https://kaiz-apis.gleeze.com/api/blackbox?ask=${encodeURIComponent(text)}&apikey=f05ad551-e7d7-459b-8b27-54e76da15011&uid=100088309851834`);
+      if (!process.env.KAIZ_API_KEY) {
+        await sendMessage(senderId, { text: "This command is not configured on this server." }, pageAccessToken);
+        return;
+      }
+      const res = await axios.get("https://kaiz-apis.gleeze.com/api/blackbox", {
+        params: { ask: text, apikey: process.env.KAIZ_API_KEY, uid: senderId },
+        timeout: 30000
+      });
       const { response } = res.data;
 
       if (response) {

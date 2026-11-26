@@ -3,12 +3,41 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const crypto = require('crypto');
+const { createLimiter } = require('./handles/rateLimit');
 const { handleMessage } = require('./handles/handle');
 const { handlePostback } = require('./handles/Postback');
 const { graphApiUrl } = require('./handles/graphApi');
 
 const app = express();
-app.use(bodyParser.json());
+app.set('trust proxy', 1);
+app.use(bodyParser.json({
+  verify: (req, res, buffer) => {
+    req.rawBody = buffer;
+  }
+}));
+app.use((error, req, res, next) => {
+  if (error.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Request body must contain valid JSON.' });
+  }
+  return next(error);
+});
+
+const chatLimiter = createLimiter({ max: 10, windowMs: 60 * 1000 });
+
+function verifySignature(req) {
+  const appSecret = process.env.APP_SECRET;
+  if (!appSecret) return false;
+
+  const signature = req.get('x-hub-signature-256');
+  if (!signature || !req.rawBody) return false;
+
+  const expected = `sha256=${crypto.createHmac('sha256', appSecret).update(req.rawBody).digest('hex')}`;
+  const actualBytes = Buffer.from(signature);
+  const expectedBytes = Buffer.from(expected);
+  return actualBytes.length === expectedBytes.length &&
+    crypto.timingSafeEqual(actualBytes, expectedBytes);
+}
 
 const colors = {
   blue: '\x1b[34m',
@@ -19,9 +48,17 @@ const colors = {
 const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 
+if (!process.env.APP_SECRET) {
+  console.warn('APP_SECRET is not set: all POST /webhook requests will be rejected until it is.');
+}
+
 app.use(express.static(path.join(__dirname, 'wala')));
 
 app.post('/api/chat', async (req, res) => {
+  if (!chatLimiter(req.ip)) {
+    return res.status(429).json({ error: 'Too many requests. Please wait a minute and try again.' });
+  }
+
   const prompt = req.body?.prompt;
 
   if (typeof prompt !== 'string' || !prompt.trim()) {
@@ -110,33 +147,40 @@ app.get('/webhook', (req, res) => {
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
-  if (mode && token) {
-    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-      console.log('WEBHOOK_VERIFIED');
-      res.status(200).send(challenge);
-    } else {
-      res.sendStatus(403);
-    }
+  if (VERIFY_TOKEN && mode === 'subscribe' && token === VERIFY_TOKEN && typeof challenge === 'string') {
+    console.log('WEBHOOK_VERIFIED');
+    return res.status(200).send(challenge);
   }
+
+  return res.sendStatus(403);
 });
 
 app.post('/webhook', (req, res) => {
+  if (!verifySignature(req)) {
+    return res.sendStatus(403);
+  }
+
   const body = req.body;
 
-  if (body.object === 'page') {
-    body.entry.forEach(entry => {
-      entry.messaging.forEach(event => {
-        if (event.message) {
-          handleMessage(event, PAGE_ACCESS_TOKEN);
-        } else if (event.postback) {
-          handlePostback(event, PAGE_ACCESS_TOKEN);
-        }
-      });
-    });
+  if (body?.object !== 'page') {
+    return res.sendStatus(404);
+  }
 
-    res.status(200).send('EVENT_RECEIVED');
-  } else {
-    res.sendStatus(404);
+  res.status(200).send('EVENT_RECEIVED');
+
+  const entries = Array.isArray(body.entry) ? body.entry : [];
+  for (const entry of entries) {
+    const events = Array.isArray(entry?.messaging) ? entry.messaging : [];
+    for (const event of events) {
+      if (!event || typeof event !== 'object' || !event.sender?.id) continue;
+
+      const work = event.message
+        ? handleMessage(event, PAGE_ACCESS_TOKEN)
+        : event.postback
+          ? handlePostback(event, PAGE_ACCESS_TOKEN)
+          : null;
+      Promise.resolve(work).catch(error => console.error('Webhook event failed:', error));
+    }
   }
 });
 

@@ -10,7 +10,7 @@ Pagebot v3 is a Node.js/Express app with a static Gemini chat page and a Faceboo
 
 ## Requirements
 
-- Node.js 20.x and npm.
+- Node.js 20.18 or newer and npm.
 - A Google Gemini API key to use the web chat.
 - A Facebook Page, Meta developer app, Page Access Token, and public HTTPS URL to run the Messenger bot.
 
@@ -22,23 +22,24 @@ Set credentials in your local shell or hosting provider's environment settings. 
 GEMINI_API_KEY=your_google_gemini_api_key
 PAGE_ACCESS_TOKEN=your_facebook_page_access_token
 VERIFY_TOKEN=your_webhook_verification_token
+APP_SECRET=your_meta_app_secret
+KAIZ_API_KEY=your_kaiz_apis_key
 PORT=3000 # optional; defaults to 3000
 ```
 
-`GEMINI_API_KEY` is required for web chat. `PAGE_ACCESS_TOKEN` and `VERIFY_TOKEN` are only required for Messenger. The verification token can be a secret string of your choice; configure the same value in Meta's webhook settings and in `VERIFY_TOKEN`.
+`GEMINI_API_KEY` is required for web chat. `PAGE_ACCESS_TOKEN`, `VERIFY_TOKEN`, and `APP_SECRET` are required for Messenger. `KAIZ_API_KEY` is used by commands that call Kaiz APIs. The verification token can be a secret string of your choice; configure the same value in Meta's webhook settings and in `VERIFY_TOKEN`.
 
 ## Install and run locally
 
 Install the locked dependencies and start the Express server:
 
 ```bash
+cp .env.example .env # only if you do not already have a .env file
 npm ci
-export GEMINI_API_KEY="your_google_gemini_api_key"
-# Set these two only when running the Messenger bot:
-export PAGE_ACCESS_TOKEN="your_facebook_page_access_token"
-export VERIFY_TOKEN="your_webhook_verification_token"
 npm start
 ```
+
+Add the credentials you need to `.env`. It is git-ignored, and `npm start` loads it when present. Do not overwrite an existing `.env` file that already contains credentials. On a hosted deployment, set variables in the hosting provider's environment settings instead.
 
 Open <http://localhost:3000> for the chat page. Without `GEMINI_API_KEY`, the page loads but chat requests return a configuration error. Messenger requires a public HTTPS deployment or tunnel; configure Meta's callback URL as `https://your-host/webhook`.
 
@@ -52,12 +53,22 @@ npm test
 ## Messenger setup
 
 1. Create a Meta developer app, add Messenger, and connect your Facebook Page.
-2. Set `PAGE_ACCESS_TOKEN` and `VERIFY_TOKEN` in the server environment.
+2. Set `PAGE_ACCESS_TOKEN`, `VERIFY_TOKEN`, and `APP_SECRET` in the server environment. `APP_SECRET` is in the Meta app dashboard under **App settings → Basic → App secret**; webhook POSTs are rejected unless the Meta signature is valid.
 3. In Meta's webhook settings, use `https://your-host/webhook` as the callback URL and the exact `VERIFY_TOKEN` value for verification.
 4. Subscribe the app and Page to the `messages`, `messaging_optins`, and `messaging_postbacks` fields.
 5. Test by sending `help` to your Page from an account that has a role in the app.
 
 Messenger API requests use Graph API v27.0, configured in `handles/graphApi.js`.
+
+The app applies in-memory limits of 10 chat requests per minute per client IP and 12 Messenger messages per minute per user (admins are exempt from the Messenger limit). These limits reset when the process restarts and are per instance.
+
+## Command safety
+
+- The `sms` and `nglspam` commands have been removed.
+- `freesms`, `scrape`, and `imgur` are restricted to IDs listed in `configure.json` as admins.
+- Messenger admin IDs are Page-scoped IDs (PSIDs), not regular Facebook profile IDs. Send `id` from your Messenger account and use the returned ID in `configure.json`.
+- Set a replacement `KAIZ_API_KEY` in your environment for the `ai`, `black`, and `uid` commands that use Kaiz APIs.
+- `.txt` files in `cmds/` are not registered as bot commands.
 
 ## Recent changes
 
@@ -67,6 +78,9 @@ Messenger API requests use Graph API v27.0, configured in `handles/graphApi.js`.
 - Removed the Gemini API key from the browser. The server reads it from `GEMINI_API_KEY`.
 - Updated Messenger Graph API calls to v27.0 and set the Send API message type to `RESPONSE`.
 - Added tests covering chat input validation, missing Gemini configuration, and server-side API key use.
+- Moved the Kaiz API key to `KAIZ_API_KEY`, fixed the `uid` command's profile URL variable, URL-encoded AI requests, and made `help` handle an unavailable daily-verse service.
+- Added Meta webhook signature validation, safer malformed-event handling, a 10-per-minute chat limit, and a 12-per-minute Messenger user limit.
+- Removed `sms`, `nglspam`, the Vercel deployment config, and its dependency; deployment now requires an always-on Node host.
 
 ### November 23, 2026
 
@@ -75,7 +89,7 @@ Messenger API requests use Graph API v27.0, configured in `handles/graphApi.js`.
 - Repaired the GitHub Actions workflow to run checks and tests on the `master` branch.
 - Added webhook verification and static-page tests.
 
-**Credential notice:** Removing a credential from the current files does not remove it from Git history. Revoke and replace any previously exposed Facebook or Gemini credentials. Third-party API keys in some bot command files were also identified and still need to be rotated and moved to server-side environment configuration before public deployment. The `/api/chat` endpoint is public, so use provider quotas or hosting-side rate limits to control usage.
+**Credential notice:** Removing a credential from the current files does not remove it from Git history. Revoke and replace previously exposed Facebook, Gemini, and Kaiz credentials. Keep `.env` local and never commit real values; `.env.example` contains blank placeholders. The `/api/chat` endpoint is public, so use provider quotas or hosting-side rate limits to control usage.
 
 ## Step 1: Go to Facebook Developers
 1. **Navigate to Facebook Developers:**
@@ -129,7 +143,7 @@ Messenger API requests use Graph API v27.0, configured in `handles/graphApi.js`.
 
 ## Step 8: Configure the Bot
 1. **Set server environment variables:**
-   - Configure `PAGE_ACCESS_TOKEN` and `VERIFY_TOKEN` in your host's environment settings. The webhook verification token must match the value entered in Meta.
+   - Configure `PAGE_ACCESS_TOKEN`, `VERIFY_TOKEN`, and `APP_SECRET` in your host's environment settings. The webhook verification token must match the value entered in Meta. Get `APP_SECRET` from **App settings → Basic → App secret**; without it, signed webhook POSTs cannot be verified.
    - Do not put access tokens or API keys in `configure.json` or browser files.
 
 ## Step 9: Test Your Messenger Bot
@@ -143,7 +157,7 @@ Messenger API requests use Graph API v27.0, configured in `handles/graphApi.js`.
 ## Step 10: Deploy Your Bot
 1. **Deployment Instructions:**
    - Ensure your server is set up with Node.js.
-   - Deploy the app to your server or cloud platform (e.g., Heroku, Render, Vercel).
+   - Deploy the app to an always-on Node.js host (e.g., Render, Railway, Replit, or a VPS). Serverless hosting is not supported because webhook events are processed after the HTTP response is sent.
 
 2. **Run Your App:**
    - Navigate to your project directory and install any additional dependencies:

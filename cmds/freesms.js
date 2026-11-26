@@ -6,7 +6,7 @@ module.exports = {
   name: 'freesms',
   description: 'Send free SMS via LBC Express API',
   author: 'Clarence',
-  role: 1, 
+  role: 0,
   async execute(senderId, args, pageAccessToken) {
     if (args.length < 2) {
       sendMessage(senderId, { text: 'Usage: freesms <phone_number> <message>' }, pageAccessToken);

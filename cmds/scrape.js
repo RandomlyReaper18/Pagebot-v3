@@ -5,7 +5,7 @@ module.exports = {
   name: 'scrape',
   description: 'Scrape the HTML content of a given URL',
   author: 'Clarence',
-  role: 1,
+  role: 0,
   async execute(senderId, args, pageAccessToken) {
     if (args.length === 0) {
       await sendMessage(senderId, { text: 'Please provide a URL to scrape.' }, pageAccessToken);

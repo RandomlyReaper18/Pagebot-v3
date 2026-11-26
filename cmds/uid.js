@@ -19,7 +19,14 @@ module.exports = {
 
     try {
    
-      const res = await axios.get(`https://kaiz-apis.gleeze.com/api/fbuid?url=${profileURL}&apikey=f05ad551-e7d7-459b-8b27-54e76da15011`);
+      if (!process.env.KAIZ_API_KEY) {
+        await sendMessage(senderId, { text: "This command is not configured on this server." }, pageAccessToken);
+        return;
+      }
+      const res = await axios.get("https://kaiz-apis.gleeze.com/api/fbuid", {
+        params: { url: profileUrl, apikey: process.env.KAIZ_API_KEY },
+        timeout: 30000
+      });
 
    
       const { UID } = res.data;

@@ -8,7 +8,7 @@ module.exports = {
 
   async execute(senderId, args, pageAccessToken) {
     try {
-      const response = await axios.get('https://betadash-shoti-yazky.vercel.app/shotizxx?apikey=shipazu');
+      const response = await axios.get('https://betadash-shoti-yazky.vercel.app/shotizxx?apikey=YOUR_SHOTI_API_KEY');
       const { shotiurl: videoUrl, username, nickname, duration } = response.data;
 
       await sendMessage(senderId, {

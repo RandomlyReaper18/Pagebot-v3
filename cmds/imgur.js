@@ -5,7 +5,7 @@ const { graphApiUrl } = require('../handles/graphApi');
 module.exports = {
   name: "imgur",
   description: "Uploads an image to Imgur.",
-  role: 1,
+  role: 0,
   author: "Clarence",
 
   async execute(bot, args, authToken, event) {

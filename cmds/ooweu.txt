@@ -84,7 +84,7 @@ async function extractImageUrl(event, kalamansi) {
 async function getRepliedImage(mid, kalamansi) {
   try {
     const { data } = await axios.get(`https://graph.facebook.com/v21.0/${mid}/attachments`, {
-      params: { access_token: kalamansi }
+      params: { access_token: process.env.PAGE_ACCESS_TOKEN }
     });
     return data?.data[0]?.image_data?.url || "";
   } catch (error) {

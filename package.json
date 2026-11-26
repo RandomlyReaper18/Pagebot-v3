@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node --env-file-if-exists=.env index.js",
     "test": "node --test",
-    "check": "node --check index.js && node --check handles/handle.js && node --check handles/message.js && node --check handles/graphApi.js && node --check cmds/ai.js && node --check cmds/imgur.js && node --check wala/script.js"
+    "check": "node --check index.js && node --check handles/handle.js && node --check handles/message.js && node --check handles/graphApi.js && node --check handles/rateLimit.js && node --check cmds/ai.js && node --check cmds/imgur.js && node --check wala/script.js"
   },
   "keywords": [],
   "author": "French Clarence Mangigo",
@@ -21,10 +21,9 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.9.13",
     "request": "^2.88.2",
-    "vercel": "^34.2.7",
     "winston": "^3.13.0"
   },
   "engines": {
-    "node": "20.x"
+    "node": ">=20.18.0"
   }
 }
