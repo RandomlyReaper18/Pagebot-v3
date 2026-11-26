@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const { sendMessage } = require('./message');
+const { graphApiUrl } = require('./graphApi');
 const config = require('../configure.json');
 
 const commands = new Map();
@@ -84,7 +85,7 @@ async function getAttachments(mid, pageAccessToken) {
     }
 
     try {
-        const { data } = await axios.get(`https://graph.facebook.com/v21.0/${mid}/attachments`, {
+        const { data } = await axios.get(graphApiUrl(`${mid}/attachments`), {
             params: { access_token: pageAccessToken }
         });
 

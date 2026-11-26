@@ -1,5 +1,6 @@
 const axios = require("axios");
 const { sendMessage } = require('../handles/message');
+const { graphApiUrl } = require('../handles/graphApi');
 
 module.exports = {
   name: "imgur",
@@ -56,7 +57,7 @@ async function extractImageUrl(event, authToken) {
 
 async function getRepliedImage(mid, authToken) {
   try {
-    const { data } = await axios.get(`https://graph.facebook.com/v21.0/${mid}/attachments`, {
+    const { data } = await axios.get(graphApiUrl(`${mid}/attachments`), {
       params: { access_token: authToken }
     });
     return data?.data[0]?.image_data?.url || "";

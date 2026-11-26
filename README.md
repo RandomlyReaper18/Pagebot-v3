@@ -1,24 +1,81 @@
-<!DOCTYPE html>
-<html lang="en">
+# Pagebot v3
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
+Pagebot v3 is a Node.js/Express app with a static Gemini chat page and a Facebook Messenger webhook bot.
 
-<body>
+## Features
 
-# Tutorial
+- Chat with Gemini through the web page at `/`.
+- Receive Facebook Messenger events through `/webhook`.
+- Run Messenger commands from the `cmds/` directory. Send `help` to the Page to list them.
 
-## Prerequisites
-Before starting, ensure you have a Facebook Page. If you don't have one, create a Facebook Page first.
+## Requirements
 
-## Installation
-Ensure you have Node.js installed, then run:
+- Node.js 20.x and npm.
+- A Google Gemini API key to use the web chat.
+- A Facebook Page, Meta developer app, Page Access Token, and public HTTPS URL to run the Messenger bot.
+
+## Environment variables
+
+Set credentials in your local shell or hosting provider's environment settings. Do not commit credentials or add them to browser code.
 
 ```bash
-npm install express body-parser fs axios
+GEMINI_API_KEY=your_google_gemini_api_key
+PAGE_ACCESS_TOKEN=your_facebook_page_access_token
+VERIFY_TOKEN=your_webhook_verification_token
+PORT=3000 # optional; defaults to 3000
 ```
+
+`GEMINI_API_KEY` is required for web chat. `PAGE_ACCESS_TOKEN` and `VERIFY_TOKEN` are only required for Messenger. The verification token can be a secret string of your choice; configure the same value in Meta's webhook settings and in `VERIFY_TOKEN`.
+
+## Install and run locally
+
+Install the locked dependencies and start the Express server:
+
+```bash
+npm ci
+export GEMINI_API_KEY="your_google_gemini_api_key"
+# Set these two only when running the Messenger bot:
+export PAGE_ACCESS_TOKEN="your_facebook_page_access_token"
+export VERIFY_TOKEN="your_webhook_verification_token"
+npm start
+```
+
+Open <http://localhost:3000> for the chat page. Without `GEMINI_API_KEY`, the page loads but chat requests return a configuration error. Messenger requires a public HTTPS deployment or tunnel; configure Meta's callback URL as `https://your-host/webhook`.
+
+Run the local checks with:
+
+```bash
+npm run check
+npm test
+```
+
+## Messenger setup
+
+1. Create a Meta developer app, add Messenger, and connect your Facebook Page.
+2. Set `PAGE_ACCESS_TOKEN` and `VERIFY_TOKEN` in the server environment.
+3. In Meta's webhook settings, use `https://your-host/webhook` as the callback URL and the exact `VERIFY_TOKEN` value for verification.
+4. Subscribe the app and Page to the `messages`, `messaging_optins`, and `messaging_postbacks` fields.
+5. Test by sending `help` to your Page from an account that has a role in the app.
+
+Messenger API requests use Graph API v27.0, configured in `handles/graphApi.js`.
+
+## Recent changes
+
+### November 26, 2026
+
+- Replaced the retired Gemini 1.5 Pro browser request with a server-side `/api/chat` endpoint using the currently supported Gemini 3.5 Flash-Lite model.
+- Removed the Gemini API key from the browser. The server reads it from `GEMINI_API_KEY`.
+- Updated Messenger Graph API calls to v27.0 and set the Send API message type to `RESPONSE`.
+- Added tests covering chat input validation, missing Gemini configuration, and server-side API key use.
+
+### November 23, 2026
+
+- Removed exposed Facebook tokens from configuration/data files and moved Messenger credentials to environment variables.
+- Removed the unsafe automatic redirect from the web page.
+- Repaired the GitHub Actions workflow to run checks and tests on the `master` branch.
+- Added webhook verification and static-page tests.
+
+**Credential notice:** Removing a credential from the current files does not remove it from Git history. Revoke and replace any previously exposed Facebook or Gemini credentials. Third-party API keys in some bot command files were also identified and still need to be rotated and moved to server-side environment configuration before public deployment. The `/api/chat` endpoint is public, so use provider quotas or hosting-side rate limits to control usage.
 
 ## Step 1: Go to Facebook Developers
 1. **Navigate to Facebook Developers:**
@@ -52,7 +109,7 @@ npm install express body-parser fs axios
    - Click "Setup Webhooks".
    - Enter the following details:
      - **Callback URL:** `https://your_hosting.site/webhook`
-     - **Verify Token:** `pagebot-v3`
+     - **Verify Token:** the same secret value configured as `VERIFY_TOKEN`
    - Subscribe to the following fields:
      - `messages`
      - `messaging_optins`
@@ -70,9 +127,10 @@ npm install express body-parser fs axios
    - Go back to "Access Tokens".
    - Copy the generated Page Access Token.
 
-## Step 8: Configure the Bot with the Token
-1. **Enter the Token:**
-   - Paste the Page Access Token into `configure.json`.
+## Step 8: Configure the Bot
+1. **Set server environment variables:**
+   - Configure `PAGE_ACCESS_TOKEN` and `VERIFY_TOKEN` in your host's environment settings. The webhook verification token must match the value entered in Meta.
+   - Do not put access tokens or API keys in `configure.json` or browser files.
 
 ## Step 9: Test Your Messenger Bot
 1. **Test Bot Functionality:**
@@ -94,7 +152,7 @@ npm install express body-parser fs axios
      ```
    - Start your server:
      ```bash
-     node index.js
+     npm start
      ```
    - To ensure your server restarts when code changes, consider using `nodemon` (optional):
      ```bash
@@ -268,5 +326,4 @@ Refer to the full example above for detailed implementation.
 ## Contact Information
 Feel free to contact **French Clarence Mangigo** if you have any concerns: [https://www.facebook.com/frenchclarence.mangigo.9](https://www.facebook.com/frenchclarence.mangigo.9)
 
-</body>
 </html>

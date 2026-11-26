@@ -5,7 +5,7 @@ const path = require('path');
 const axios = require('axios');
 const { handleMessage } = require('./handles/handle');
 const { handlePostback } = require('./handles/Postback');
-const config = require('./configure.json');
+const { graphApiUrl } = require('./handles/graphApi');
 
 const app = express();
 app.use(bodyParser.json());
@@ -16,11 +16,61 @@ const colors = {
   reset: '\x1b[0m'
 };
 
-const VERIFY_TOKEN = 'pagebot-v3';
+const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 
 app.use(express.static(path.join(__dirname, 'wala')));
 
+app.post('/api/chat', async (req, res) => {
+  const prompt = req.body?.prompt;
+
+  if (typeof prompt !== 'string' || !prompt.trim()) {
+    return res.status(400).json({ error: 'Enter a prompt to continue.' });
+  }
+
+  if (prompt.length > 10000) {
+    return res.status(413).json({ error: 'Prompt must be 10,000 characters or fewer.' });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(503).json({ error: 'Gemini chat is not configured on this server.' });
+  }
+
+  try {
+    const { data } = await axios.post(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
+      {
+        contents: [{ role: 'user', parts: [{ text: prompt.trim() }] }]
+      },
+      {
+        headers: { 'x-goog-api-key': apiKey },
+        timeout: 30000
+      }
+    );
+
+    const text = data.candidates?.[0]?.content?.parts
+      ?.map(part => part.text || '')
+      .join('')
+      .trim();
+
+    if (!text) {
+      return res.status(502).json({ error: 'Gemini returned no text. Try rephrasing your prompt.' });
+    }
+
+    return res.json({ text });
+  } catch (error) {
+    console.error('Gemini request failed:', error.response?.data || error.message);
+    return res.status(502).json({ error: 'Gemini could not process your request. Please try again.' });
+  }
+});
+
 const loadMenuCommands = async () => {
+  if (!PAGE_ACCESS_TOKEN) {
+    console.warn('PAGE_ACCESS_TOKEN is not configured; skipping Messenger menu registration.');
+    return;
+  }
+
   try {
     const commandsDir = path.join(__dirname, 'cmds');
     const commandFiles = fs.readdirSync(commandsDir).filter(file => file.endsWith('.js'));
@@ -30,7 +80,7 @@ const loadMenuCommands = async () => {
       return { name: command.name, description: command.description || 'No description available' };
     });
 
-    const loadCmd = await axios.post(`https://graph.facebook.com/v21.0/me/messenger_profile?access_token=${config.pageAccessToken}`, {
+    const loadCmd = await axios.post(`${graphApiUrl('me/messenger_profile')}?access_token=${PAGE_ACCESS_TOKEN}`, {
       commands: [
         {
           locale: "default",
@@ -77,9 +127,9 @@ app.post('/webhook', (req, res) => {
     body.entry.forEach(entry => {
       entry.messaging.forEach(event => {
         if (event.message) {
-          handleMessage(event, config.pageAccessToken);
+          handleMessage(event, PAGE_ACCESS_TOKEN);
         } else if (event.postback) {
-          handlePostback(event, config.pageAccessToken);
+          handlePostback(event, PAGE_ACCESS_TOKEN);
         }
       });
     });
@@ -107,11 +157,16 @@ function logTime() {
   console.log(logMessage);
 }
 
-logTime();
-setInterval(logTime, 60 * 60 * 1000);
-const hehe = require('./package.json');
+const packageInfo = require('./package.json');
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`${colors.red} Bot Owner: ${hehe.author}`);
-});
+
+if (require.main === module) {
+  logTime();
+  setInterval(logTime, 60 * 60 * 1000);
+  app.listen(PORT, () => {
+    console.log(`${colors.red} Bot Owner: ${packageInfo.author}`);
+  });
+}
+
+module.exports = app;
                                      

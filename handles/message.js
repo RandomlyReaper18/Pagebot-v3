@@ -1,5 +1,6 @@
 const request = require('request');
 const axios = require('axios');
+const { graphApiUrl } = require('./graphApi');
 
 async function typingIndicator(senderId, pageAccessToken) {
     if (!senderId) {
@@ -8,7 +9,7 @@ async function typingIndicator(senderId, pageAccessToken) {
     }
 
     try {
-        await axios.post(`https://graph.facebook.com/v13.0/me/messages`, {
+        await axios.post(graphApiUrl('me/messages'), {
             recipient: { id: senderId },
             sender_action: 'typing_on',
         }, {
@@ -29,12 +30,13 @@ function sendMessage(senderId, message, pageAccessToken) {
 
     const requestData = {
         recipient: { id: senderId },
+        messaging_type: 'RESPONSE',
         message,
     };
 
     request.post(
         {
-            url: `https://graph.facebook.com/v13.0/me/messages`,
+            url: graphApiUrl('me/messages'),
             qs: { access_token: pageAccessToken },
             json: requestData,
         },

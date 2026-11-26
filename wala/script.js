@@ -9,9 +9,7 @@ const deleteChatButton = document.querySelector("#delete-chat-button");
 let userMessage = null;
 let isResponseGenerating = false;
 
-// API configuration
-const API_KEY = "AIzaSyCRgVWxdX2sY9b4NdnXGn5P91vDwSWdpQM"; // Your API key here
-const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${API_KEY}`;
+const API_URL = '/api/chat';
 
 // Load theme and chat data from local storage on page load
 const loadDataFromLocalstorage = () => {
@@ -67,19 +65,13 @@ const generateAPIResponse = async (incomingMessageDiv) => {
     const response = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        contents: [{ 
-          role: "user", 
-          parts: [{ text: userMessage }] 
-        }] 
-      }),
+      body: JSON.stringify({ prompt: userMessage }),
     });
 
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error.message);
+    if (!response.ok) throw new Error(data.error || "Failed to get a response.");
 
-    // Get the API response text and remove asterisks from it
-    const apiResponse = data.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\*/g, '$1');
+    const apiResponse = data.text.replace(/\*\*(.*?)\*\*/g, '$1');
     showTypingEffect(apiResponse, textElement, incomingMessageDiv); // Show typing effect
   } catch (error) { // Handle error
     isResponseGenerating = false;

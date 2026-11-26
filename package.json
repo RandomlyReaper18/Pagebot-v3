@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "test": "node --test",
+    "check": "node --check index.js && node --check handles/handle.js && node --check handles/message.js && node --check handles/graphApi.js && node --check cmds/ai.js && node --check cmds/imgur.js && node --check wala/script.js"
   },
   "keywords": [],
   "author": "French Clarence Mangigo",
